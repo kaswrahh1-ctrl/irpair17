@@ -1,0 +1,2116 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRpair PRO v2.5 - نظام إدارة محلات الصيانة والمبيعات | المهندس/ هشام عيد</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#070B14',
+                        cardBg: '#0F172A',
+                        cardHover: '#1E293B',
+                        primary: '#3B82F6',
+                        primaryHover: '#2563EB',
+                        accent: '#06B6D4',
+                        textMain: '#F8FAFC',
+                        textSec: '#94A3B8',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                        danger: '#EF4444'
+                    },
+                    fontFamily: {
+                        sans: ['Tajawal', 'Cairo', 'Segoe UI', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome & Google Fonts -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', 'Cairo', sans-serif; background-color: #070B14; color: #F8FAFC; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #070B14; }
+        ::-webkit-scrollbar-thumb { background: #1E293B; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+        @media print {
+            body * { visibility: hidden; }
+            #printableArea, #printableArea * { visibility: visible; }
+            #printableArea { position: absolute; left: 0; top: 0; width: 100%; background: white !important; color: black !important; padding: 20px; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="bg-darkBg text-textMain min-h-screen flex flex-col antialiased selection:bg-primary selection:text-white">
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed top-20 left-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+    <!-- Main Application Shell -->
+    <div id="appContainer" class="flex flex-col h-screen overflow-hidden">
+
+        <!-- Top Header & Horizontal Navigation Bar -->
+        <header class="bg-cardBg border-b border-gray-800 z-30 shadow-md">
+            <!-- Main Brand Bar -->
+            <div class="h-16 px-6 flex items-center justify-between border-b border-gray-800/60">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-white shadow-lg shadow-primary/30">
+                        <i class="fa-solid fa-screwdriver-wrench text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-black text-lg tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-primary to-accent">IRpair PRO</h1>
+                        <p class="text-[10px] text-textSec" data-i18n="systemSubtitle">إدارة الصيانة والمبيعات - م. هشام عيد</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <!-- Global Quick Search -->
+                    <div class="relative hidden sm:block w-64">
+                        <span class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-textSec">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                        </span>
+                        <input type="text" id="globalSearchInput" oninput="handleGlobalSearch(this.value)" placeholder="بحث سريع برقم صيانة، هاتف، IMEI..." class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 pr-9 pl-4 text-xs text-white placeholder-textSec focus:outline-none focus:border-primary">
+                    </div>
+
+                    <!-- Language Switcher -->
+                    <button onclick="toggleLanguage()" class="bg-darkBg hover:bg-cardHover border border-gray-800 px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 text-textMain transition-all">
+                        <i class="fa-solid fa-globe text-accent"></i>
+                        <span id="langBtnText">EN</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Horizontal Navigation Links Bar -->
+            <nav class="px-4 py-2 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap scrollbar-none" id="sidebarNav">
+                <a href="#dashboard" onclick="switchTab('dashboard')" class="nav-item flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-textSec hover:bg-cardHover hover:text-white transition-all active-nav" data-tab="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i> <span data-i18n="navDashboard">لوحة التحكم</span>
+                </a>
+                <a href="#repairs" onclick="switchTab('repairs')" class="nav-item flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-textSec hover:bg-cardHover hover:text-white transition-all" data-tab="repairs">
+                    <i class="fa-solid fa-mobile-screen-button"></i> <span data-i18n="navRepairs">قسم الصيانة</span>
+                </a>
+                <a href="#customers" onclick="switchTab('customers')" class="nav-item flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-textSec hover:bg-cardHover hover:text-white transition-all" data-tab="customers">
+                    <i class="fa-solid fa-users"></i> <span data-i18n="navCustomers">العملاء وحساباتهم</span>
+                </a>
+                <a href="#inventory" onclick="switchTab('inventory')" class="nav-item flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-textSec hover:bg-cardHover hover:text-white transition-all" data-tab="inventory">
+                    <i class="fa-solid fa-boxes-stacked"></i> <span data-i18n="navInventory">المخزون وقطع الغيار</span>
+                </a>
+                <a href="#sales" onclick="switchTab('sales')" class="nav-item flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-textSec hover:bg-cardHover hover:text-white transition-all" data-tab="sales">
+                    <i class="fa-solid fa-cash-register"></i> <span data-i18n="navSales">نقطة البيع (POS)</span>
+                </a>
+                <a href="#purchases" onclick="switchTab('purchases')" class="nav-item flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-textSec hover:bg-cardHover hover:text-white transition-all" data-tab="purchases">
+                    <i class="fa-solid fa-cart-shopping"></i> <span data-i18n="navPurchases">فواتير المشتريات</span>
+                </a>
+                <a href="#suppliers" onclick="switchTab('suppliers')" class="nav-item flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-textSec hover:bg-cardHover hover:text-white transition-all" data-tab="suppliers">
+                    <i class="fa-solid fa-truck-field"></i> <span data-i18n="navSuppliers">إدارة الموردين</span>
+                </a>
+                <a href="#expenses" onclick="switchTab('expenses')" class="nav-item flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-textSec hover:bg-cardHover hover:text-white transition-all" data-tab="expenses">
+                    <i class="fa-solid fa-receipt"></i> <span data-i18n="navExpenses">المصروفات النثرية</span>
+                </a>
+                <a href="#cashbox" onclick="switchTab('cashbox')" class="nav-item flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-textSec hover:bg-cardHover hover:text-white transition-all" data-tab="cashbox">
+                    <i class="fa-solid fa-vault"></i> <span data-i18n="navCashbox">الخزينة والأرباح</span>
+                </a>
+                <a href="#reports" onclick="switchTab('reports')" class="nav-item flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-textSec hover:bg-cardHover hover:text-white transition-all" data-tab="reports">
+                    <i class="fa-solid fa-chart-column"></i> <span data-i18n="navReports">التقارير الشاملة</span>
+                </a>
+                <a href="#technical" onclick="switchTab('technical')" class="nav-item flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-textSec hover:bg-cardHover hover:text-white transition-all" data-tab="technical">
+                    <i class="fa-solid fa-microchip"></i> <span data-i18n="navTechnical">السجل الفني ومسارات البوردة</span>
+                </a>
+                <a href="#settings" onclick="switchTab('settings')" class="nav-item flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-medium text-textSec hover:bg-cardHover hover:text-white transition-all" data-tab="settings">
+                    <i class="fa-solid fa-gear"></i> <span data-i18n="navSettings">الإعدادات والنسخ</span>
+                </a>
+            </nav>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 flex flex-col overflow-hidden">
+            <div class="flex-1 overflow-y-auto p-6" id="mainContentContainer">
+
+                <!-- 1. DASHBOARD VIEW -->
+                <div id="view-dashboard" class="space-y-6 view-section">
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div class="bg-cardBg border border-gray-800 rounded-2xl p-4 flex flex-col justify-between shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-textSec font-medium" data-i18n="statRepairsToday">أجهزة مستلمة اليوم</span>
+                                <div class="w-8 h-8 rounded-lg bg-primary/20 text-primary flex items-center justify-center text-sm"><i class="fa-solid fa-mobile"></i></div>
+                            </div>
+                            <div class="mt-4 flex items-baseline justify-between">
+                                <span id="statRepairsToday" class="text-2xl font-black text-white">0</span>
+                                <span class="text-xs text-success font-semibold flex items-center gap-1"><i class="fa-solid fa-arrow-trend-up"></i> نشط</span>
+                            </div>
+                        </div>
+                        <div class="bg-cardBg border border-gray-800 rounded-2xl p-4 flex flex-col justify-between shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-textSec font-medium" data-i18n="statInRepair">قيد الإصلاح البوردة</span>
+                                <div class="w-8 h-8 rounded-lg bg-warning/20 text-warning flex items-center justify-center text-sm"><i class="fa-solid fa-microchip"></i></div>
+                            </div>
+                            <div class="mt-4 flex items-baseline justify-between">
+                                <span id="statInRepair" class="text-2xl font-black text-white">0</span>
+                                <span class="text-xs text-warning font-semibold">ورشة المايكرو</span>
+                            </div>
+                        </div>
+                        <div class="bg-cardBg border border-gray-800 rounded-2xl p-4 flex flex-col justify-between shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-textSec font-medium" data-i18n="statReadyDelivery">جاهزة للتسليم</span>
+                                <div class="w-8 h-8 rounded-lg bg-success/20 text-success flex items-center justify-center text-sm"><i class="fa-solid fa-check"></i></div>
+                            </div>
+                            <div class="mt-4 flex items-baseline justify-between">
+                                <span id="statReadyDelivery" class="text-2xl font-black text-white">0</span>
+                                <span class="text-xs text-success font-semibold">بانتظار العميل</span>
+                            </div>
+                        </div>
+                        <div class="bg-cardBg border border-gray-800 rounded-2xl p-4 flex flex-col justify-between shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-textSec font-medium" data-i18n="statSalesToday">إجمالي مبيعات اليوم</span>
+                                <div class="w-8 h-8 rounded-lg bg-accent/20 text-accent flex items-center justify-center text-sm"><i class="fa-solid fa-cash-register"></i></div>
+                            </div>
+                            <div class="mt-4 flex items-baseline justify-between">
+                                <span id="statSalesToday" class="text-2xl font-black text-white">0.00 <span class="text-xs font-normal text-textSec">EGP</span></span>
+                            </div>
+                        </div>
+                        <div class="bg-cardBg border border-gray-800 rounded-2xl p-4 flex flex-col justify-between shadow-lg">
+                            <div class="flex items-center justify-between">
+                                <span class="text-xs text-textSec font-medium" data-i18n="statCashbox">رصيد الخزينة</span>
+                                <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-sm"><i class="fa-solid fa-vault"></i></div>
+                            </div>
+                            <div class="mt-4 flex items-baseline justify-between">
+                                <span id="statCashboxBalance" class="text-2xl font-black text-white">0.00 <span class="text-xs font-normal text-textSec">EGP</span></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Secondary Analytics Row -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Recent Activity Log -->
+                        <div class="lg:col-span-2 bg-cardBg border border-gray-800 rounded-2xl p-5 shadow-lg flex flex-col">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-base text-white flex items-center gap-2"><i class="fa-solid fa-clock-rotate-left text-primary"></i> <span data-i18n="recentActivities">النشاط الأخير وسجل العمليات</span></h3>
+                                <button onclick="switchTab('repairs')" class="text-xs text-primary hover:underline" data-i18n="viewAll">عرض الكل</button>
+                            </div>
+                            <div class="flex-1 overflow-x-auto">
+                                <table class="w-full text-right text-xs">
+                                    <thead class="bg-darkBg text-textSec border-b border-gray-800">
+                                        <tr>
+                                            <th class="p-3 rounded-r-xl" data-i18n="thTime">الوقت والتاريخ</th>
+                                            <th class="p-3" data-i18n="thOperation">العملية</th>
+                                            <th class="p-3" data-i18n="thRef">المرجع</th>
+                                            <th class="p-3 rounded-l-xl" data-i18n="thAmount">القيمة</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="dashboardActivityTable" class="divide-y divide-gray-800/50">
+                                        <!-- Populated dynamically -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Quick Actions & Alerts -->
+                        <div class="bg-cardBg border border-gray-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-base text-white mb-4 flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation text-warning"></i> <span data-i18n="alertsAndWarnings">تنبيهات المخزون والصيانة</span></h3>
+                                <div id="dashboardAlertsContainer" class="space-y-3">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                            <div class="mt-6 pt-4 border-t border-gray-800 grid grid-cols-2 gap-3">
+                                <button onclick="switchTab('repairs'); openNewRepairModal();" class="bg-primary hover:bg-primaryHover text-white p-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-md shadow-primary/20 transition-all">
+                                    <i class="fa-solid fa-plus"></i> <span data-i18n="newRepairBtn">صيانة جديدة</span>
+                                </button>
+                                <button onclick="switchTab('sales')" class="bg-accent/20 hover:bg-accent/30 text-accent border border-accent/30 p-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all">
+                                    <i class="fa-solid fa-cash-register"></i> <span data-i18n="newSaleBtn">فاتورة بيع</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. REPAIRS VIEW -->
+                <div id="view-repairs" class="space-y-6 view-section hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-cardBg border border-gray-800 p-5 rounded-2xl shadow-lg">
+                        <div>
+                            <h3 class="font-bold text-lg text-white" data-i18n="repairsTitle">إدارة الصيانة الشاملة (هاردوير / سفتوير)</h3>
+                            <p class="text-xs text-textSec" data-i18n="repairsSubtitle">تتبع الأجهزة، تتبع مسارات البوردة، وقطع الغيار المستخدمة</p>
+                        </div>
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <input type="text" id="repairSearchInput" oninput="renderRepairsTable()" placeholder="بحث برقم صيانة، اسم، هاتف، IMEI..." class="bg-darkBg border border-gray-800 rounded-xl py-2 px-4 text-xs text-white placeholder-textSec focus:outline-none focus:border-primary flex-1 sm:w-72">
+                            <select id="repairStatusFilter" onchange="renderRepairsTable()" class="bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-primary">
+                                <option value="" data-i18n="allStatuses">كل الحالات</option>
+                                <option value="received" data-i18n="statusReceived">تم الاستلام</option>
+                                <option value="inspecting" data-i18n="statusInspecting">قيد الفحص (BGA/Tester)</option>
+                                <option value="waiting_approval" data-i18n="statusWaitingApproval">بانتظار موافقة العميل</option>
+                                <option value="waiting_part" data-i18n="statusWaitingPart">بانتظار قطعة غيار</option>
+                                <option value="repairing" data-i18n="statusRepairing">قيد الإصلاح المايكرو</option>
+                                <option value="repaired" data-i18n="statusRepaired">تم الإصلاح</option>
+                                <option value="ready" data-i18n="statusReady">جاهز للتسليم</option>
+                                <option value="delivered" data-i18n="statusDelivered">تم التسليم</option>
+                                <option value="cancelled" data-i18n="statusCancelled">ملغي</option>
+                            </select>
+                            <button onclick="openNewRepairModal()" class="bg-primary hover:bg-primaryHover text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-primary/30 whitespace-nowrap">
+                                <i class="fa-solid fa-plus"></i> <span data-i18n="addRepair">استلام جهاز</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Repairs Table -->
+                    <div class="bg-cardBg border border-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right text-xs">
+                                <thead class="bg-darkBg text-textSec border-b border-gray-800">
+                                    <tr>
+                                        <th class="p-4" data-i18n="thRepairNo">رقم الصيانة</th>
+                                        <th class="p-4" data-i18n="thCustomerName">اسم العميل</th>
+                                        <th class="p-4" data-i18n="thDevice">الجهاز والموديل</th>
+                                        <th class="p-4" data-i18n="thImei">IMEI / Serial</th>
+                                        <th class="p-4" data-i18n="thStatus">الحالة</th>
+                                        <th class="p-4" data-i18n="thCost">التكلفة والمدفوع</th>
+                                        <th class="p-4" data-i18n="thDate">التاريخ</th>
+                                        <th class="p-4 text-center" data-i18n="thActions">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="repairsTableBody" class="divide-y divide-gray-800/50">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. CUSTOMERS VIEW -->
+                <div id="view-customers" class="space-y-6 view-section hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-cardBg border border-gray-800 p-5 rounded-2xl shadow-lg">
+                        <div>
+                            <h3 class="font-bold text-lg text-white" data-i18n="customersTitle">إدارة العملاء وحساباتهم</h3>
+                            <p class="text-xs text-textSec" data-i18n="customersSubtitle">سجل العملاء، أجهزة الصيانة السابقة، والمستحقات المالية</p>
+                        </div>
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <input type="text" id="customerSearchInput" oninput="renderCustomersTable()" placeholder="بحث بالاسم أو رقم الهاتف..." class="bg-darkBg border border-gray-800 rounded-xl py-2 px-4 text-xs text-white placeholder-textSec focus:outline-none focus:border-primary flex-1 sm:w-72">
+                        </div>
+                    </div>
+
+                    <div class="bg-cardBg border border-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right text-xs">
+                                <thead class="bg-darkBg text-textSec border-b border-gray-800">
+                                    <tr>
+                                        <th class="p-4" data-i18n="thCustomerId">رقم العميل</th>
+                                        <th class="p-4" data-i18n="thCustomerName">اسم العميل</th>
+                                        <th class="p-4" data-i18n="thPhone">رقم الهاتف</th>
+                                        <th class="p-4" data-i18n="thAddress">العنوان</th>
+                                        <th class="p-4" data-i18n="thTotalDeals">إجمالي التعاملات</th>
+                                        <th class="p-4" data-i18n="thDueBalance">المبلغ المستحق</th>
+                                        <th class="p-4 text-center" data-i18n="thActions">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="customersTableBody" class="divide-y divide-gray-800/50">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. INVENTORY VIEW -->
+                <div id="view-inventory" class="space-y-6 view-section hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-cardBg border border-gray-800 p-5 rounded-2xl shadow-lg">
+                        <div>
+                            <h3 class="font-bold text-lg text-white" data-i18n="inventoryTitle">إدارة المخزون وقطع الغيار والشاشات</h3>
+                            <p class="text-xs text-textSec" data-i18n="inventorySubtitle">متابعة الأصناف، الأسعار، حد الطلب، وبطاريات/شاشات الموبايل</p>
+                        </div>
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <input type="text" id="inventorySearchInput" oninput="renderInventoryTable()" placeholder="بحث بالكود SKU أو اسم الصنف..." class="bg-darkBg border border-gray-800 rounded-xl py-2 px-4 text-xs text-white placeholder-textSec focus:outline-none focus:border-primary flex-1 sm:w-72">
+                            <button onclick="openInventoryModal()" class="bg-primary hover:bg-primaryHover text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-primary/30 whitespace-nowrap">
+                                <i class="fa-solid fa-plus"></i> <span data-i18n="addInventoryItem">إضافة صنف</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-cardBg border border-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right text-xs">
+                                <thead class="bg-darkBg text-textSec border-b border-gray-800">
+                                    <tr>
+                                        <th class="p-4" data-i18n="thSku">SKU / كود</th>
+                                        <th class="p-4" data-i18n="thItemName">اسم الصنف</th>
+                                        <th class="p-4" data-i18n="thCategory">التصنيف</th>
+                                        <th class="p-4" data-i18n="thStockQty">الكمية المتاحة</th>
+                                        <th class="p-4" data-i18n="thBuyPrice">سعر الشراء</th>
+                                        <th class="p-4" data-i18n="thSellPrice">سعر البيع</th>
+                                        <th class="p-4 text-center" data-i18n="thActions">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="inventoryTableBody" class="divide-y divide-gray-800/50">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. SALES (POS) VIEW -->
+                <div id="view-sales" class="space-y-6 view-section hidden">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- POS Left: Product Catalog & Search -->
+                        <div class="lg:col-span-2 bg-cardBg border border-gray-800 rounded-2xl p-5 shadow-lg flex flex-col h-[700px]">
+                            <div class="flex items-center justify-between mb-4 gap-3">
+                                <h3 class="font-bold text-base text-white flex items-center gap-2"><i class="fa-solid fa-basket-shopping text-accent"></i> <span data-i18n="posCatalog">نقطة البيع - المنتجات والإكسسوارات</span></h3>
+                                <input type="text" id="posSearchInput" oninput="renderPosCatalog()" placeholder="بحث عن صنف للبيع..." class="bg-darkBg border border-gray-800 rounded-xl py-2 px-4 text-xs text-white placeholder-textSec focus:outline-none focus:border-primary w-64">
+                            </div>
+                            <div id="posCatalogGrid" class="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 gap-3 content-start pr-1">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- POS Right: Active Invoice Cart & Checkout -->
+                        <div class="bg-cardBg border border-gray-800 rounded-2xl p-5 shadow-lg flex flex-col justify-between h-[700px]">
+                            <div>
+                                <div class="flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
+                                    <h3 class="font-bold text-base text-white flex items-center gap-2"><i class="fa-solid fa-file-invoice text-primary"></i> <span data-i18n="posCart">فاتورة البيع الحالية</span></h3>
+                                    <button onclick="clearPosCart()" class="text-xs text-danger hover:underline"><i class="fa-solid fa-trash"></i> <span data-i18n="clearCart">إفراغ</span></button>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="block text-xs text-textSec mb-1" data-i18n="selectCustomer">العميل</label>
+                                    <select id="posCustomerSelect" class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-primary">
+                                        <!-- Populated dynamically -->
+                                    </select>
+                                </div>
+                                <div id="posCartItemsList" class="space-y-2 overflow-y-auto max-h-56 pr-1 mb-4">
+                                    <!-- Populated dynamically -->
+                                </div>
+                            </div>
+                            <div class="border-t border-gray-800 pt-4 space-y-3">
+                                <div class="flex justify-between text-xs">
+                                    <span class="text-textSec" data-i18n="subtotal">المجموع الفرعي:</span>
+                                    <span id="posSubtotal" class="font-bold text-white">0.00 EGP</span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-textSec" data-i18n="discount">الخصم:</span>
+                                    <input type="number" id="posDiscountInput" value="0" oninput="calculatePosTotals()" class="w-24 bg-darkBg border border-gray-800 rounded-lg py-1 px-2 text-xs text-white text-center focus:outline-none focus:border-primary">
+                                </div>
+                                <div class="flex justify-between text-sm font-black border-t border-gray-800 pt-2">
+                                    <span class="text-white" data-i18n="grandTotal">الإجمالي النهائي:</span>
+                                    <span id="posGrandTotal" class="text-accent">0.00 EGP</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div>
+                                        <label class="block text-[11px] text-textSec mb-1" data-i18n="paidAmount">المبلغ المدفوع</label>
+                                        <input type="number" id="posPaidInput" value="0" class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-primary">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[11px] text-textSec mb-1" data-i18n="paymentMethod">طريقة الدفع</label>
+                                        <select id="posPaymentMethod" class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-primary">
+                                            <option value="cash" data-i18n="payCash">نقدي</option>
+                                            <option value="card" data-i18n="payCard">بطاقة بنكية</option>
+                                            <option value="transfer" data-i18n="payTransfer">انستا باي / تحويل</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <button onclick="checkoutPos()" class="w-full bg-success hover:bg-emerald-600 text-white py-3 rounded-xl text-xs font-bold shadow-lg shadow-success/30 flex items-center justify-center gap-2 transition-all">
+                                    <i class="fa-solid fa-check"></i> <span data-i18n="checkoutBtn">إتمام البيع وطباعة الفاتورة</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. PURCHASES VIEW -->
+                <div id="view-purchases" class="space-y-6 view-section hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-cardBg border border-gray-800 p-5 rounded-2xl shadow-lg">
+                        <div>
+                            <h3 class="font-bold text-lg text-white" data-i18n="purchasesTitle">إدارة فواتير المشتريات</h3>
+                            <p class="text-xs text-textSec" data-i18n="purchasesSubtitle">شراء قطع الغيار والشاشات وأجهزة العرض من الموردين</p>
+                        </div>
+                        <button onclick="openPurchaseModal()" class="bg-primary hover:bg-primaryHover text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-primary/30">
+                            <i class="fa-solid fa-plus"></i> <span data-i18n="addPurchase">فاتورة شراء جديدة</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-cardBg border border-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right text-xs">
+                                <thead class="bg-darkBg text-textSec border-b border-gray-800">
+                                    <tr>
+                                        <th class="p-4" data-i18n="thInvoiceNo">رقم الفاتورة</th>
+                                        <th class="p-4" data-i18n="thSupplierName">المورد</th>
+                                        <th class="p-4" data-i18n="thTotal">الإجمالي</th>
+                                        <th class="p-4" data-i18n="thPaid">المدفوع</th>
+                                        <th class="p-4" data-i18n="thRemaining">المتبقي</th>
+                                        <th class="p-4" data-i18n="thDate">التاريخ</th>
+                                        <th class="p-4 text-center" data-i18n="thActions">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="purchasesTableBody" class="divide-y divide-gray-800/50">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 7. SUPPLIERS VIEW -->
+                <div id="view-suppliers" class="space-y-6 view-section hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-cardBg border border-gray-800 p-5 rounded-2xl shadow-lg">
+                        <div>
+                            <h3 class="font-bold text-lg text-white" data-i18n="suppliersTitle">إدارة الموردين</h3>
+                            <p class="text-xs text-textSec" data-i18n="suppliersSubtitle">سجل الموردين، فواتير الشراء السابقة، والأرصدة المستحقة</p>
+                        </div>
+                        <button onclick="openSupplierModal()" class="bg-primary hover:bg-primaryHover text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-primary/30">
+                            <i class="fa-solid fa-user-plus"></i> <span data-i18n="addSupplier">مورد جديد</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-cardBg border border-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right text-xs">
+                                <thead class="bg-darkBg text-textSec border-b border-gray-800">
+                                    <tr>
+                                        <th class="p-4" data-i18n="thSupplierName">اسم المورد</th>
+                                        <th class="p-4" data-i18n="thPhone">رقم الهاتف</th>
+                                        <th class="p-4" data-i18n="thAddress">العنوان</th>
+                                        <th class="p-4" data-i18n="thTotalPurchases">إجمالي المشتريات</th>
+                                        <th class="p-4" data-i18n="thDueBalance">الرصيد المستحق</th>
+                                        <th class="p-4 text-center" data-i18n="thActions">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="suppliersTableBody" class="divide-y divide-gray-800/50">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 8. EXPENSES VIEW -->
+                <div id="view-expenses" class="space-y-6 view-section hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-cardBg border border-gray-800 p-5 rounded-2xl shadow-lg">
+                        <div>
+                            <h3 class="font-bold text-lg text-white" data-i18n="expensesTitle">إدارة المصروفات التشغيلية</h3>
+                            <p class="text-xs text-textSec" data-i18n="expensesSubtitle">الإيجار، الكهرباء، رواتب الفنيين، والمصروفات النثرية</p>
+                        </div>
+                        <button onclick="openExpenseModal()" class="bg-primary hover:bg-primaryHover text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-primary/30">
+                            <i class="fa-solid fa-plus"></i> <span data-i18n="addExpense">تسجيل مصروف</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-cardBg border border-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right text-xs">
+                                <thead class="bg-darkBg text-textSec border-b border-gray-800">
+                                    <tr>
+                                        <th class="p-4" data-i18n="thRefNo">الرقم المرجعي</th>
+                                        <th class="p-4" data-i18n="thCategory">التصنيف</th>
+                                        <th class="p-4" data-i18n="thDescription">الوصف</th>
+                                        <th class="p-4" data-i18n="thAmount">المبلغ</th>
+                                        <th class="p-4" data-i18n="thPaymentMethod">طريقة الدفع</th>
+                                        <th class="p-4" data-i18n="thDate">التاريخ</th>
+                                        <th class="p-4 text-center" data-i18n="thActions">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="expensesTableBody" class="divide-y divide-gray-800/50">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 9. CASHBOX VIEW -->
+                <div id="view-cashbox" class="space-y-6 view-section hidden">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div class="bg-cardBg border border-gray-800 rounded-2xl p-5 shadow-lg">
+                            <span class="text-xs text-textSec" data-i18n="cashboxOpening">الرصيد الافتتاحي للخزينة</span>
+                            <h4 id="cashboxOpeningVal" class="text-2xl font-black text-white mt-2">0.00 EGP</h4>
+                        </div>
+                        <div class="bg-cardBg border border-gray-800 rounded-2xl p-5 shadow-lg">
+                            <span class="text-xs text-textSec" data-i18n="cashboxTotalIn">إجمالي الوارد (مبيعات وصيانة)</span>
+                            <h4 id="cashboxTotalInVal" class="text-2xl font-black text-success mt-2">0.00 EGP</h4>
+                        </div>
+                        <div class="bg-cardBg border border-gray-800 rounded-2xl p-5 shadow-lg">
+                            <span class="text-xs text-textSec" data-i18n="cashboxTotalOut">إجمالي المنصرف (مصروفات ومشتريات)</span>
+                            <h4 id="cashboxTotalOutVal" class="text-2xl font-black text-danger mt-2">0.00 EGP</h4>
+                        </div>
+                    </div>
+
+                    <div class="bg-cardBg border border-gray-800 rounded-2xl p-5 shadow-lg flex flex-col">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="font-bold text-base text-white" data-i18n="cashboxLedger">دفتر حركات الخزينة</h3>
+                            <button onclick="openCashModal()" class="bg-primary hover:bg-primaryHover text-white px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-2">
+                                <i class="fa-solid fa-plus"></i> <span data-i18n="addCashTx">إيداع / سحب نقدي</span>
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right text-xs">
+                                <thead class="bg-darkBg text-textSec border-b border-gray-800">
+                                    <tr>
+                                        <th class="p-4" data-i18n="thTime">التاريخ والوقت</th>
+                                        <th class="p-4" data-i18n="thType">نوع الحركة</th>
+                                        <th class="p-4" data-i18n="thDescription">البيان</th>
+                                        <th class="p-4" data-i18n="thAmount">المبلغ</th>
+                                        <th class="p-4" data-i18n="thPaymentMethod">طريقة الدفع</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cashboxTableBody" class="divide-y divide-gray-800/50">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 10. REPORTS VIEW -->
+                <div id="view-reports" class="space-y-6 view-section hidden">
+                    <div class="bg-cardBg border border-gray-800 p-5 rounded-2xl shadow-lg flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div>
+                            <h3 class="font-bold text-lg text-white" data-i18n="reportsTitle">التقارير المالية والأرباح</h3>
+                            <p class="text-xs text-textSec" data-i18n="reportsSubtitle">تحليل المبيعات، الصيانة، تكلفة البضاعة المباعة COGS، وصافي الأرباح</p>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <select id="reportPeriodSelect" onchange="generateReports()" class="bg-darkBg border border-gray-800 rounded-xl py-2 px-4 text-xs text-white focus:outline-none focus:border-primary">
+                                <option value="today" data-i18n="repToday">اليوم</option>
+                                <option value="week" data-i18n="repWeek">آخر 7 أيام</option>
+                                <option value="month" data-i18n="repMonth">الشهر الحالي</option>
+                                <option value="all" data-i18n="repAll" selected>جميع الفترة</option>
+                            </select>
+                            <button onclick="window.print()" class="bg-primary hover:bg-primaryHover text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2">
+                                <i class="fa-solid fa-print"></i> <span data-i18n="printReport">طباعة التقرير</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Report Summary Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div class="bg-cardBg border border-gray-800 p-5 rounded-2xl shadow-lg">
+                            <span class="text-xs text-textSec" data-i18n="repTotalSales">إجمالي المبيعات والصيانة</span>
+                            <h4 id="repTotalSalesVal" class="text-2xl font-black text-white mt-2">0.00 EGP</h4>
+                        </div>
+                        <div class="bg-cardBg border border-gray-800 p-5 rounded-2xl shadow-lg">
+                            <span class="text-xs text-textSec" data-i18n="repCogs">تكلفة البضاعة المباعة (COGS)</span>
+                            <h4 id="repCogsVal" class="text-2xl font-black text-warning mt-2">0.00 EGP</h4>
+                        </div>
+                        <div class="bg-cardBg border border-gray-800 p-5 rounded-2xl shadow-lg">
+                            <span class="text-xs text-textSec" data-i18n="repGrossProfit">مجمل الربح</span>
+                            <h4 id="repGrossProfitVal" class="text-2xl font-black text-accent mt-2">0.00 EGP</h4>
+                        </div>
+                        <div class="bg-cardBg border border-gray-800 p-5 rounded-2xl shadow-lg">
+                            <span class="text-xs text-textSec" data-i18n="repNetProfit">صافي الربح (بعد المصروفات)</span>
+                            <h4 id="repNetProfitVal" class="text-2xl font-black text-success mt-2">0.00 EGP</h4>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 11. TECHNICAL RECORDS VIEW -->
+                <div id="view-technical" class="space-y-6 view-section hidden">
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-cardBg border border-gray-800 p-5 rounded-2xl shadow-lg">
+                        <div>
+                            <h3 class="font-bold text-lg text-white" data-i18n="techTitle">السجل الفني ومسارات البوردة</h3>
+                            <p class="text-xs text-textSec" data-i18n="techSubtitle">توثيق قياسات المايكرو، دايود مود، مسارات VBUS، وإعادة كرة BGA</p>
+                        </div>
+                        <button onclick="openTechnicalModal()" class="bg-primary hover:bg-primaryHover text-white px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-lg shadow-primary/30">
+                            <i class="fa-solid fa-plus"></i> <span data-i18n="addTechRecord">تسجيل فني جديد</span>
+                        </button>
+                    </div>
+
+                    <div class="bg-cardBg border border-gray-800 rounded-2xl shadow-lg overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-right text-xs">
+                                <thead class="bg-darkBg text-textSec border-b border-gray-800">
+                                    <tr>
+                                        <th class="p-4" data-i18n="thRepairNo">رقم الصيانة</th>
+                                        <th class="p-4" data-i18n="thDevice">الجهاز والموديل</th>
+                                        <th class="p-4" data-i18n="thFault">العطل الفني</th>
+                                        <th class="p-4" data-i18n="thMeasurements">القياسات ومسارات البوردة</th>
+                                        <th class="p-4" data-i18n="thTechNotes">ملاحظات الفني</th>
+                                        <th class="p-4 text-center" data-i18n="thActions">الإجراءات</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="technicalTableBody" class="divide-y divide-gray-800/50">
+                                    <!-- Populated dynamically -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 12. SETTINGS VIEW -->
+                <div id="view-settings" class="space-y-6 view-section hidden">
+                    <div class="bg-cardBg border border-gray-800 p-6 rounded-2xl shadow-lg max-w-2xl mx-auto space-y-6">
+                        <div>
+                            <h3 class="font-bold text-lg text-white" data-i18n="settingsTitle">إعدادات النظام والنسخ الاحتياطي</h3>
+                            <p class="text-xs text-textSec" data-i18n="settingsSubtitle">بيانات المحل، العملة، التصدير والاستعادة المحلية</p>
+                        </div>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs text-textSec mb-1" data-i18n="shopName">اسم المحل</label>
+                                <input type="text" id="settingShopName" value="IRpair Mobile Workshop" class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-primary">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs text-textSec mb-1" data-i18n="phone">رقم الهاتف</label>
+                                    <input type="text" id="settingPhone" value="01001220551" class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-primary">
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-textSec mb-1" data-i18n="currency">العملة الافتراضية</label>
+                                    <input type="text" id="settingCurrency" value="EGP" class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-primary" readonly>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-xs text-textSec mb-1" data-i18n="address">العنوان</label>
+                                <input type="text" id="settingAddress" value="شارع التلاتيني أمام الباب الخلفي للساحة، مصر" class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-xs text-white focus:outline-none focus:border-primary">
+                            </div>
+                            <div class="pt-4 border-t border-gray-800 flex flex-wrap gap-4">
+                                <button onclick="saveSettings()" class="bg-primary hover:bg-primaryHover text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-primary/30">
+                                    <i class="fa-solid fa-save"></i> <span data-i18n="saveSettings">حفظ الإعدادات</span>
+                                </button>
+                                <button onclick="exportBackupJson()" class="bg-cardHover hover:bg-gray-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold border border-gray-700">
+                                    <i class="fa-solid fa-download"></i> <span data-i18n="exportBackup">تصدير نسخة احتياطية</span>
+                                </button>
+                                <label class="bg-cardHover hover:bg-gray-700 text-white px-5 py-2.5 rounded-xl text-xs font-bold border border-gray-700 cursor-pointer flex items-center gap-2">
+                                    <i class="fa-solid fa-upload"></i> <span data-i18n="importBackup">استعادة نسخة</span>
+                                    <input type="file" id="importFile" onchange="importBackupJson(event)" class="hidden" accept=".json">
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL CONTAINERS -->
+    <div id="modalOverlay" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div id="modalContentBox" class="bg-cardBg border border-gray-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative transform transition-all">
+            <!-- Dynamically injected modal forms -->
+        </div>
+    </div>
+
+    <!-- HIDDEN PRINTABLE INVOICE AREA -->
+    <div id="printableArea" class="hidden"></div>
+
+    <!-- Application JavaScript Engine -->
+    <script>
+        /* ==========================================================
+           IRpair PRO v2.5 - Production Engine (Clean Start)
+           Developer & Engineer: Hisham Eid (هشام عيد) - 01001220551
+           Workshop: IRpair (إر بير) - شارع التلاتيني أمام الباب الخلفي للساحة
+           ========================================================== */
+
+        let db = {
+            settings: { 
+                shopName: "IRpair Mobile Workshop", 
+                phone: "01001220551", 
+                address: "شارع التلاتيني أمام الباب الخلفي للساحة، مصر", 
+                currency: "EGP" 
+            },
+            customers: [],
+            repairs: [],
+            repairEvents: [],
+            repairPayments: [],
+            inventory: [],
+            inventoryMovements: [],
+            sales: [],
+            saleItems: [],
+            purchases: [],
+            purchaseItems: [],
+            suppliers: [],
+            expenses: [],
+            cashTransactions: [],
+            technicalRecords: [],
+            cashboxOpening: 0
+        };
+
+        let currentLang = 'ar';
+        let posCart = [];
+
+        const translations = {
+            ar: {
+                systemSubtitle: "إدارة الصيانة والمبيعات الاحترافية - م. هشام عيد",
+                navDashboard: "لوحة التحكم",
+                navRepairs: "قسم الصيانة",
+                navCustomers: "العملاء وحساباتهم",
+                navInventory: "المخزون وقطع الغيار",
+                navSales: "نقطة البيع (POS)",
+                navPurchases: "فواتير المشتريات",
+                navSuppliers: "إدارة الموردين",
+                navExpenses: "المصروفات النثرية",
+                navCashbox: "الخزينة والأرباح",
+                navReports: "التقارير الشاملة",
+                navTechnical: "السجل الفني ومسارات البوردة",
+                navSettings: "الإعدادات والنسخ",
+                statRepairsToday: "أجهزة مستلمة اليوم",
+                statInRepair: "قيد الإصلاح البوردة",
+                statReadyDelivery: "جاهزة للتسليم",
+                statSalesToday: "إجمالي مبيعات اليوم",
+                statCashbox: "رصيد الخزينة",
+                recentActivities: "النشاط الأخير وسجل العمليات",
+                viewAll: "عرض الكل",
+                thTime: "الوقت والتاريخ",
+                thOperation: "العملية",
+                thRef: "المرجع",
+                thAmount: "القيمة",
+                alertsAndWarnings: "تنبيهات المخزون والصيانة",
+                newRepairBtn: "صيانة جديدة",
+                newSaleBtn: "فاتورة بيع",
+                repairsTitle: "إدارة الصيانة الشاملة (هاردوير / سفتوير)",
+                repairsSubtitle: "تتبع الأجهزة، تتبع مسارات البوردة، وقطع الغيار المستخدمة",
+                allStatuses: "كل الحالات",
+                statusReceived: "تم الاستلام",
+                statusInspecting: "قيد الفحص (BGA/Tester)",
+                statusWaitingApproval: "بانتظار موافقة العميل",
+                statusWaitingPart: "بانتظار قطعة غيار",
+                statusRepairing: "قيد الإصلاح المايكرو",
+                statusRepaired: "تم الإصلاح",
+                statusReady: "جاهز للتسليم",
+                statusDelivered: "تم التسليم",
+                statusCancelled: "ملغي",
+                addRepair: "استلام جهاز",
+                thRepairNo: "رقم الصيانة",
+                thCustomerName: "اسم العميل",
+                thDevice: "الجهاز والموديل",
+                thImei: "IMEI / Serial",
+                thStatus: "الحالة",
+                thCost: "التكلفة والمدفوع",
+                thDate: "التاريخ",
+                thActions: "الإجراءات",
+                customersTitle: "إدارة العملاء وحساباتهم",
+                customersSubtitle: "سجل العملاء، أجهزة الصيانة السابقة، والمستحقات المالية",
+                addCustomer: "عميل جديد",
+                thCustomerId: "رقم العميل",
+                thPhone: "رقم الهاتف",
+                thAddress: "العنوان",
+                thTotalDeals: "إجمالي التعاملات",
+                thDueBalance: "المبلغ المستحق",
+                inventoryTitle: "إدارة المخزون وقطع الغيار والشاشات",
+                inventorySubtitle: "متابعة الأصناف، الأسعار، حد الطلب، وبطاريات/شاشات الموبايل",
+                addInventoryItem: "إضافة صنف",
+                thSku: "SKU / كود",
+                thItemName: "اسم الصنف",
+                thCategory: "التصنيف",
+                thStockQty: "الكمية المتاحة",
+                thBuyPrice: "سعر الشراء",
+                thSellPrice: "سعر البيع",
+                posCatalog: "نقطة البيع - المنتجات والإكسسوارات",
+                posCart: "فاتورة البيع الحالية",
+                clearCart: "إفراغ",
+                selectCustomer: "العميل",
+                subtotal: "المجموع الفرعي:",
+                discount: "الخصم:",
+                grandTotal: "الإجمالي النهائي:",
+                paidAmount: "المبلغ المدفوع",
+                paymentMethod: "طريقة الدفع",
+                payCash: "نقدي",
+                payCard: "بطاقة بنكية",
+                payTransfer: "انستا باي / تحويل",
+                checkoutBtn: "إتمام البيع وطباعة الفاتورة",
+                purchasesTitle: "إدارة فواتير المشتريات",
+                purchasesSubtitle: "شراء قطع الغيار والشاشات وأجهزة العرض من الموردين",
+                addPurchase: "فاتورة شراء جديدة",
+                thInvoiceNo: "رقم الفاتورة",
+                thTotal: "الإجمالي",
+                thPaid: "المدفوع",
+                thRemaining: "المتبقي",
+                suppliersTitle: "إدارة الموردين",
+                suppliersSubtitle: "سجل الموردين، فواتير الشراء السابقة، والأرصدة المستحقة",
+                addSupplier: "مورد جديد",
+                thSupplierName: "المورد",
+                thTotalPurchases: "إجمالي المشتريات",
+                expensesTitle: "إدارة المصروفات التشغيلية",
+                expensesSubtitle: "الإيجار، الكهرباء، رواتب الفنيين، والمصروفات النثرية",
+                addExpense: "تسجيل مصروف",
+                thRefNo: "الرقم المرجعي",
+                thDescription: "الوصف",
+                cashboxOpening: "الرصيد الافتتاحي للخزينة",
+                cashboxTotalIn: "إجمالي الوارد (مبيعات وصيانة)",
+                cashboxTotalOut: "إجمالي المنصرف (مصروفات ومشتريات)",
+                cashboxLedger: "دفتر حركات الخزينة",
+                addCashTx: "إيداع / سحب نقدي",
+                thType: "نوع الحركة",
+                reportsTitle: "التقارير المالية والأرباح",
+                reportsSubtitle: "تحليل المبيعات، الصيانة، تكلفة البضاعة المباعة COGS، وصافي الأرباح",
+                repToday: "اليوم",
+                repWeek: "آخر 7 أيام",
+                repMonth: "الشهر الحالي",
+                repAll: "جميع الفترة",
+                printReport: "طباعة التقرير",
+                repTotalSales: "إجمالي المبيعات والصيانة",
+                repCogs: "تكلفة البضاعة المباعة (COGS)",
+                repGrossProfit: "مجمل الربح",
+                repNetProfit: "صافي الربح (بعد المصروفات)",
+                techTitle: "السجل الفني ومسارات البوردة",
+                techSubtitle: "توثيق قياسات المايكرو، دايود مود، مسارات VBUS، وإعادة كرة BGA",
+                addTechRecord: "تسجيل فني جديد",
+                thFault: "العطل الفني",
+                thMeasurements: "القياسات ومسارات البوردة",
+                thTechNotes: "ملاحظات الفني",
+                settingsTitle: "إعدادات النظام والنسخ الاحتياطي",
+                settingsSubtitle: "بيانات المحل، العملة، التصدير والاستعادة المحلية",
+                shopName: "اسم المحل",
+                currency: "العملة الافتراضية",
+                saveSettings: "حفظ الإعدادات",
+                exportBackup: "تصدير نسخة احتياطية",
+                importBackup: "استعادة نسخة"
+            },
+            en: {
+                systemSubtitle: "Professional Mobile Repair & Sales - Eng. Hisham Eid",
+                navDashboard: "Dashboard",
+                navRepairs: "Repairs",
+                navCustomers: "Customers",
+                navInventory: "Inventory",
+                navSales: "Sales (POS)",
+                navPurchases: "Purchases",
+                navSuppliers: "Suppliers",
+                navExpenses: "Expenses",
+                navCashbox: "Cashbox",
+                navReports: "Reports",
+                navTechnical: "Technical Records",
+                navSettings: "Settings",
+                statRepairsToday: "Repairs Today",
+                statInRepair: "Micro-Soldering",
+                statReadyDelivery: "Ready for Delivery",
+                statSalesToday: "Sales Today",
+                statCashbox: "Cashbox Balance",
+                recentActivities: "Recent Activity",
+                viewAll: "View All",
+                thTime: "Date & Time",
+                thOperation: "Operation",
+                thRef: "Reference",
+                thAmount: "Amount",
+                alertsAndWarnings: "System Alerts",
+                newRepairBtn: "New Repair",
+                newSaleBtn: "New Sale",
+                repairsTitle: "Comprehensive Repairs",
+                repairsSubtitle: "Track devices, board traces, and spare parts",
+                allStatuses: "All Statuses",
+                statusReceived: "Received",
+                statusInspecting: "Inspecting",
+                statusWaitingApproval: "Waiting Approval",
+                statusWaitingPart: "Waiting Part",
+                statusRepairing: "Repairing",
+                statusRepaired: "Repaired",
+                statusReady: "Ready",
+                statusDelivered: "Delivered",
+                statusCancelled: "Cancelled",
+                addRepair: "Receive Device",
+                thRepairNo: "Repair No.",
+                thCustomerName: "Customer Name",
+                thDevice: "Device & Model",
+                thImei: "IMEI / Serial",
+                thStatus: "Status",
+                thCost: "Cost & Paid",
+                thDate: "Date",
+                thActions: "Actions",
+                customersTitle: "Customer Management",
+                customersSubtitle: "Customer records, past repairs, and balances",
+                addCustomer: "New Customer",
+                thCustomerId: "Customer ID",
+                thPhone: "Phone",
+                thAddress: "Address",
+                thTotalDeals: "Total Deals",
+                thDueBalance: "Due Balance",
+                inventoryTitle: "Inventory & Spare Parts",
+                inventorySubtitle: "Manage items, prices, and low stock limits",
+                addInventoryItem: "Add Item",
+                thSku: "SKU Code",
+                thItemName: "Item Name",
+                thCategory: "Category",
+                thStockQty: "Available Qty",
+                thBuyPrice: "Buy Price",
+                thSellPrice: "Sell Price",
+                posCatalog: "POS - Products",
+                posCart: "Active Sale Invoice",
+                clearCart: "Clear",
+                selectCustomer: "Customer",
+                subtotal: "Subtotal:",
+                discount: "Discount:",
+                grandTotal: "Grand Total:",
+                paidAmount: "Paid Amount",
+                paymentMethod: "Payment Method",
+                payCash: "Cash",
+                payCard: "Card",
+                payTransfer: "Transfer",
+                checkoutBtn: "Complete Sale & Print Invoice",
+                purchasesTitle: "Purchase Invoices",
+                purchasesSubtitle: "Buy spare parts and devices from suppliers",
+                addPurchase: "New Purchase",
+                thInvoiceNo: "Invoice No.",
+                thTotal: "Total",
+                thPaid: "Paid",
+                thRemaining: "Remaining",
+                suppliersTitle: "Supplier Management",
+                suppliersSubtitle: "Supplier records, purchases, and due balances",
+                addSupplier: "New Supplier",
+                thSupplierName: "Supplier",
+                thTotalPurchases: "Total Purchases",
+                expensesTitle: "Operating Expenses",
+                expensesSubtitle: "Rent, electricity, salaries, and miscellaneous",
+                addExpense: "Add Expense",
+                thRefNo: "Reference No.",
+                thDescription: "Description",
+                cashboxOpening: "Opening Balance",
+                cashboxTotalIn: "Total Inflow",
+                cashboxTotalOut: "Total Outflow",
+                cashboxLedger: "Cashbox Ledger",
+                addCashTx: "New Cash Transaction",
+                thType: "Type",
+                reportsTitle: "Financial & Admin Reports",
+                reportsSubtitle: "Sales analysis, profits, COGS, and expenses",
+                repToday: "Today",
+                repWeek: "Last 7 Days",
+                repMonth: "This Month",
+                repAll: "All Time",
+                printReport: "Print Report",
+                repTotalSales: "Total Sales & Repairs",
+                repCogs: "Cost of Goods Sold (COGS)",
+                repGrossProfit: "Gross Profit",
+                repNetProfit: "Net Profit (After Expenses)",
+                techTitle: "Technical Records & Board Traces",
+                techSubtitle: "Document measurements, board traces, and technician notes",
+                addTechRecord: "New Tech Record",
+                thFault: "Fault",
+                thMeasurements: "Measurements & Traces",
+                thTechNotes: "Tech Notes",
+                settingsTitle: "Settings & Backup",
+                settingsSubtitle: "Shop details, currency, export and local restore",
+                shopName: "Shop Name",
+                currency: "Currency",
+                saveSettings: "Save Settings",
+                exportBackup: "Export Backup",
+                importBackup: "Restore Backup"
+            }
+        };
+
+        window.onload = function() {
+            loadFromLocalStorage();
+            switchTab('dashboard');
+            updateUIStrings();
+            renderDashboard();
+        };
+
+        function saveToLocalStorage() {
+            try {
+                localStorage.setItem('irpair_pro_db_prod_v2_5', JSON.stringify(db));
+            } catch (e) {
+                showToast("خطأ في حفظ البيانات محلياً", "error");
+            }
+        }
+
+        function loadFromLocalStorage() {
+            try {
+                const saved = localStorage.getItem('irpair_pro_db_prod_v2_5');
+                if (saved) {
+                    db = JSON.parse(saved);
+                }
+            } catch (e) {
+                console.error("Failed to load local storage", e);
+            }
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgCol = type === 'success' ? 'bg-success text-white' : type === 'warning' ? 'bg-warning text-gray-900' : 'bg-danger text-white';
+            const icon = type === 'success' ? 'fa-circle-check' : type === 'warning' ? 'fa-triangle-exclamation' : 'fa-circle-xmark';
+            
+            toast.className = `${bgCol} px-4 py-3 rounded-xl shadow-lg flex items-center gap-3 text-xs font-bold pointer-events-auto transition-all transform translate-y-2 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid ${icon} text-base"></i><span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 10);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('bg-primary', 'text-white', 'shadow-lg', 'shadow-primary/30');
+                el.classList.add('text-textSec');
+            });
+            const activeNav = document.querySelector(`[data-tab="${tabId}"]`);
+            if (activeNav) {
+                activeNav.classList.add('bg-primary', 'text-white', 'shadow-lg', 'shadow-primary/30');
+                activeNav.classList.remove('text-textSec');
+                activeNav.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+            }
+
+            if (tabId === 'dashboard') renderDashboard();
+            if (tabId === 'repairs') renderRepairsTable();
+            if (tabId === 'customers') renderCustomersTable();
+            if (tabId === 'inventory') renderInventoryTable();
+            if (tabId === 'sales') initPosView();
+            if (tabId === 'purchases') renderPurchasesTable();
+            if (tabId === 'suppliers') renderSuppliersTable();
+            if (tabId === 'expenses') renderExpensesTable();
+            if (tabId === 'cashbox') renderCashboxView();
+            if (tabId === 'reports') generateReports();
+            if (tabId === 'technical') renderTechnicalTable();
+        }
+
+        function toggleLanguage() {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            const html = document.documentElement;
+            if (currentLang === 'ar') {
+                html.setAttribute('lang', 'ar');
+                html.setAttribute('dir', 'rtl');
+                document.getElementById('langBtnText').innerText = 'EN';
+            } else {
+                html.setAttribute('lang', 'en');
+                html.setAttribute('dir', 'ltr');
+                document.getElementById('langBtnText').innerText = 'AR';
+            }
+            updateUIStrings();
+        }
+
+        function updateUIStrings() {
+            const dict = translations[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key]) el.innerText = dict[key];
+            });
+        }
+
+        function handleGlobalSearch(query) {
+            if (!query.trim()) return;
+            switchTab('repairs');
+            document.getElementById('repairSearchInput').value = query;
+            renderRepairsTable();
+        }
+
+        // 1. DASHBOARD LOGIC
+        function renderDashboard() {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const repairsToday = db.repairs.filter(r => r.date.startsWith(todayStr)).length;
+            const inRepair = db.repairs.filter(r => r.status === 'repairing' || r.status === 'inspecting').length;
+            const readyDelivery = db.repairs.filter(r => r.status === 'ready').length;
+            
+            const salesToday = db.sales.filter(s => s.date.startsWith(todayStr)).reduce((sum, s) => sum + s.grandTotal, 0);
+            const repairsPaidToday = db.repairPayments.filter(p => p.date.startsWith(todayStr)).reduce((sum, p) => sum + p.amount, 0);
+            const totalSalesToday = salesToday + repairsPaidToday;
+
+            let cashIn = db.cashboxOpening + db.cashTransactions.filter(t => t.type === 'in').reduce((sum, t) => sum + t.amount, 0);
+            let cashOut = db.cashTransactions.filter(t => t.type === 'out').reduce((sum, t) => sum + t.amount, 0);
+            let cashBalance = cashIn - cashOut;
+
+            document.getElementById('statRepairsToday').innerText = repairsToday;
+            document.getElementById('statInRepair').innerText = inRepair;
+            document.getElementById('statReadyDelivery').innerText = readyDelivery;
+            document.getElementById('statSalesToday').innerText = totalSalesToday.toFixed(2) + ' EGP';
+            document.getElementById('statCashboxBalance').innerText = cashBalance.toFixed(2) + ' EGP';
+
+            const tbody = document.getElementById('dashboardActivityTable');
+            tbody.innerHTML = '';
+            
+            let allActivities = [];
+            db.repairs.forEach(r => allActivities.push({ time: r.date, op: 'استلام صيانة', ref: r.repairNo, amount: r.totalCost + ' EGP' }));
+            db.sales.forEach(s => allActivities.push({ time: s.date, op: 'عملية بيع POS', ref: s.invoiceNo, amount: s.grandTotal + ' EGP' }));
+            db.expenses.forEach(e => allActivities.push({ time: e.date, op: 'مصروفات: ' + e.category, ref: e.refNo, amount: e.amount + ' EGP' }));
+
+            allActivities.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+            if (allActivities.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-textSec">لا توجد أنشطة حديثة</td></tr>`;
+            } else {
+                allActivities.slice(0, 6).forEach(act => {
+                    tbody.innerHTML += `
+                        <tr class="hover:bg-cardHover/50">
+                            <td class="p-3 text-textSec">${act.time}</td>
+                            <td class="p-3 font-semibold text-white">${act.op}</td>
+                            <td class="p-3 text-accent">${act.ref}</td>
+                            <td class="p-3 font-bold text-success">${act.amount}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            const alertsContainer = document.getElementById('dashboardAlertsContainer');
+            alertsContainer.innerHTML = '';
+            let alertCount = 0;
+
+            const lowStockItems = db.inventory.filter(i => i.qty <= i.minQty);
+            lowStockItems.forEach(item => {
+                alertCount++;
+                alertsContainer.innerHTML += `
+                    <div class="bg-warning/10 border border-warning/30 rounded-xl p-3 text-xs flex items-center justify-between">
+                        <span class="text-warning font-semibold"><i class="fa-solid fa-triangle-exclamation"></i> الصنف (${item.name}) وصل للحد الأدنى (${item.qty})</span>
+                        <button onclick="switchTab('inventory')" class="text-xs text-white underline">عرض</button>
+                    </div>
+                `;
+            });
+
+            const overdueRepairs = db.repairs.filter(r => r.status !== 'delivered' && r.status !== 'cancelled' && new Date(r.expectedDate) < new Date());
+            overdueRepairs.forEach(r => {
+                alertCount++;
+                alertsContainer.innerHTML += `
+                    <div class="bg-danger/10 border border-danger/30 rounded-xl p-3 text-xs flex items-center justify-between">
+                        <span class="text-danger font-semibold"><i class="fa-solid fa-clock"></i> صيانة متأخرة للعميل (${r.customerName}) - رقم: ${r.repairNo}</span>
+                        <button onclick="switchTab('repairs')" class="text-xs text-white underline">عرض</button>
+                    </div>
+                `;
+            });
+
+            if (alertCount === 0) {
+                alertsContainer.innerHTML = `<p class="text-xs text-textSec text-center py-4">لا توجد تنبيهات عاجلة، النظام يعمل بكفاءة تامة.</p>`;
+            }
+        }
+
+        // 2. REPAIRS LOGIC
+        function renderRepairsTable() {
+            const tbody = document.getElementById('repairsTableBody');
+            const search = document.getElementById('repairSearchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('repairStatusFilter').value;
+
+            tbody.innerHTML = '';
+            let filtered = db.repairs.filter(r => {
+                const matchSearch = r.repairNo.toLowerCase().includes(search) || r.customerName.toLowerCase().includes(search) || r.phone.includes(search) || r.imei.toLowerCase().includes(search);
+                const matchStatus = !statusFilter || r.status === statusFilter;
+                return matchSearch && matchStatus;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-6 text-center text-textSec">لا توجد عمليات صيانة مسجلة</td></tr>`;
+                return;
+            }
+
+            const statusLabels = {
+                received: { ar: 'تم الاستلام', color: 'bg-primary/20 text-primary' },
+                inspecting: { ar: 'قيد الفحص (BGA/Tester)', color: 'bg-warning/20 text-warning' },
+                waiting_approval: { ar: 'بانتظار موافقة العميل', color: 'bg-warning/20 text-warning' },
+                waiting_part: { ar: 'بانتظار قطعة غيار', color: 'bg-danger/20 text-danger' },
+                repairing: { ar: 'قيد الإصلاح المايكرو', color: 'bg-primary/20 text-primary' },
+                repaired: { ar: 'تم الإصلاح', color: 'bg-success/20 text-success' },
+                ready: { ar: 'جاهز للتسليم', color: 'bg-success/20 text-success' },
+                delivered: { ar: 'تم التسليم', color: 'bg-gray-700 text-gray-300' },
+                cancelled: { ar: 'ملغي', color: 'bg-danger/20 text-danger' }
+            };
+
+            filtered.forEach(r => {
+                const st = statusLabels[r.status] || { ar: r.status, color: 'bg-gray-700 text-white' };
+                tbody.innerHTML += `
+                    <tr class="hover:bg-cardHover/50 transition-all">
+                        <td class="p-4 font-mono font-bold text-accent">${r.repairNo}</td>
+                        <td class="p-4 font-semibold text-white">${r.customerName} <div class="text-[10px] text-textSec">${r.phone}</div></td>
+                        <td class="p-4">${r.deviceType} - ${r.model}</td>
+                        <td class="p-4 font-mono text-textSec">${r.imei || '-'}</td>
+                        <td class="p-4"><span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${st.color}">${st.ar}</span></td>
+                        <td class="p-4 font-bold text-white">${r.totalCost} EGP <div class="text-[10px] text-success">مدفوع: ${r.paidAmount} EGP</div></td>
+                        <td class="p-4 text-textSec">${r.date}</td>
+                        <td class="p-4 text-center space-x-2 space-x-reverse">
+                            <button onclick="openRepairDetailsModal('${r.id}')" class="bg-primary/20 hover:bg-primary/30 text-primary px-3 py-1.5 rounded-lg text-xs font-bold" title="التفاصيل"><i class="fa-solid fa-eye"></i></button>
+                            <button onclick="printRepairReceipt('${r.id}')" class="bg-accent/20 hover:bg-accent/30 text-accent px-3 py-1.5 rounded-lg text-xs font-bold" title="طباعة الإيصال"><i class="fa-solid fa-print"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openNewRepairModal() {
+            const box = document.getElementById('modalContentBox');
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            box.innerHTML = `
+                <div class="flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
+                    <h3 class="font-bold text-base text-white">استلام جهاز صيانة جديد</h3>
+                    <button onclick="closeModal()" class="text-textSec hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form onsubmit="saveNewRepair(event)" class="space-y-4 text-xs">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-textSec mb-1">اسم العميل *</label>
+                            <input type="text" id="repCustomerName" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-textSec mb-1">رقم الهاتف *</label>
+                            <input type="text" id="repPhone" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-textSec mb-1">نوع الجهاز / الشركة *</label>
+                            <input type="text" id="repDeviceType" placeholder="مثل: Samsung / iPhone" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-textSec mb-1">الموديل *</label>
+                            <input type="text" id="repModel" placeholder="مثل: A52 / 12 Pro" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-textSec mb-1">الرقم التسلسلي IMEI</label>
+                            <input type="text" id="repImei" class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-textSec mb-1">وصف العطل بدقة (مثل: فاصل بوردة، شاشة، شبكة) *</label>
+                        <textarea id="repFault" rows="2" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary"></textarea>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-textSec mb-1">التكلفة المتوقعة (EGP)</label>
+                            <input type="number" id="repTotalCost" value="0" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-textSec mb-1">المبلغ المدفوع مقدماً</label>
+                            <input type="number" id="repPaidAmount" value="0" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-textSec mb-1">موعد التسليم المتوقع</label>
+                            <input type="date" id="repExpectedDate" class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-3 border-t border-gray-800">
+                        <button type="button" onclick="closeModal()" class="bg-cardHover px-4 py-2 rounded-xl text-textSec hover:text-white">إلغاء</button>
+                        <button type="submit" class="bg-primary hover:bg-primaryHover text-white px-5 py-2 rounded-xl font-bold shadow-lg shadow-primary/30">حفظ واستلام الجهاز</button>
+                    </div>
+                </form>
+            `;
+        }
+
+        function saveNewRepair(e) {
+            e.preventDefault();
+            const repairNo = 'REP-' + Math.floor(100000 + Math.random() * 900000);
+            const customerName = document.getElementById('repCustomerName').value;
+            const phone = document.getElementById('repPhone').value;
+            const deviceType = document.getElementById('repDeviceType').value;
+            const model = document.getElementById('repModel').value;
+            const imei = document.getElementById('repImei').value;
+            const fault = document.getElementById('repFault').value;
+            const totalCost = parseFloat(document.getElementById('repTotalCost').value) || 0;
+            const paidAmount = parseFloat(document.getElementById('repPaidAmount').value) || 0;
+            const expectedDate = document.getElementById('repExpectedDate').value || new Date().toISOString().split('T')[0];
+
+            const newRepair = {
+                id: 'R_' + Date.now(),
+                repairNo,
+                customerName,
+                phone,
+                deviceType,
+                model,
+                imei,
+                fault,
+                totalCost,
+                paidAmount,
+                expectedDate,
+                status: 'received',
+                date: new Date().toISOString().replace('T', ' ').substring(0, 16),
+                usedParts: []
+            };
+
+            db.repairs.unshift(newRepair);
+
+            if (paidAmount > 0) {
+                db.repairPayments.push({
+                    id: 'RP_' + Date.now(),
+                    repairId: newRepair.id,
+                    amount: paidAmount,
+                    date: newRepair.date
+                });
+                db.cashTransactions.push({
+                    id: 'CT_' + Date.now(),
+                    type: 'in',
+                    amount: paidAmount,
+                    description: `دفعة صيانة رقم ${repairNo} - ${customerName}`,
+                    date: newRepair.date,
+                    method: 'cash'
+                });
+            }
+
+            saveToLocalStorage();
+            closeModal();
+            renderRepairsTable();
+            showToast('تم استلام الجهاز بنجاح برقم: ' + repairNo);
+        }
+
+        function openRepairDetailsModal(id) {
+            const r = db.repairs.find(item => item.id === id);
+            if (!r) return;
+
+            const box = document.getElementById('modalContentBox');
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            box.innerHTML = `
+                <div class="flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
+                    <h3 class="font-bold text-base text-white">تفاصيل عملية الصيانة: <span class="text-accent">${r.repairNo}</span></h3>
+                    <button onclick="closeModal()" class="text-textSec hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <div class="space-y-4 text-xs">
+                    <div class="grid grid-cols-2 gap-3 bg-darkBg p-3 rounded-xl border border-gray-800">
+                        <div><span class="text-textSec">العميل:</span> <strong class="text-white">${r.customerName}</strong></div>
+                        <div><span class="text-textSec">الهاتف:</span> <strong class="text-white">${r.phone}</strong></div>
+                        <div><span class="text-textSec">الجهاز:</span> <strong class="text-white">${r.deviceType} - ${r.model}</strong></div>
+                        <div><span class="text-textSec">IMEI:</span> <strong class="text-white">${r.imei || '-'}</strong></div>
+                        <div class="col-span-2"><span class="text-textSec">العطل:</span> <strong class="text-white">${r.fault}</strong></div>
+                    </div>
+                    <div>
+                        <label class="block text-textSec mb-1 font-bold">تحديث الحالة:</label>
+                        <div class="flex gap-2">
+                            <select id="updateStatusSelect" class="flex-1 bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                                <option value="received" ${r.status==='received'?'selected':''}>تم الاستلام</option>
+                                <option value="inspecting" ${r.status==='inspecting'?'selected':''}>قيد الفحص (BGA/Tester)</option>
+                                <option value="waiting_approval" ${r.status==='waiting_approval'?'selected':''}>بانتظار موافقة العميل</option>
+                                <option value="waiting_part" ${r.status==='waiting_part'?'selected':''}>بانتظار قطعة غيار</option>
+                                <option value="repairing" ${r.status==='repairing'?'selected':''}>قيد الإصلاح المايكرو</option>
+                                <option value="repaired" ${r.status==='repaired'?'selected':''}>تم الإصلاح</option>
+                                <option value="ready" ${r.status==='ready'?'selected':''}>جاهز للتسليم</option>
+                                <option value="delivered" ${r.status==='delivered'?'selected':''}>تم التسليم</option>
+                                <option value="cancelled" ${r.status==='cancelled'?'selected':''}>ملغي</option>
+                            </select>
+                            <button onclick="updateRepairStatus('${r.id}')" class="bg-primary hover:bg-primaryHover text-white px-4 py-2 rounded-xl font-bold">تحديث</button>
+                        </div>
+                    </div>
+                    <div class="border-t border-gray-800 pt-3 flex justify-between items-center">
+                        <div>
+                            <span class="text-textSec">التكلفة:</span> <strong class="text-white">${r.totalCost} EGP</strong> | 
+                            <span class="text-textSec">المدفوع:</span> <strong class="text-success">${r.paidAmount} EGP</strong> | 
+                            <span class="text-textSec">المتبقي:</span> <strong class="text-danger">${(r.totalCost - r.paidAmount)} EGP</strong>
+                        </div>
+                        <button onclick="printRepairReceipt('${r.id}')" class="bg-accent/20 hover:bg-accent/30 text-accent px-3 py-2 rounded-xl font-bold flex items-center gap-1.5"><i class="fa-solid fa-print"></i> طباعة الإيصال</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateRepairStatus(id) {
+            const newStatus = document.getElementById('updateStatusSelect').value;
+            const r = db.repairs.find(item => item.id === id);
+            if (r) {
+                r.status = newStatus;
+                saveToLocalStorage();
+                closeModal();
+                renderRepairsTable();
+                showToast('تم تحديث حالة الصيانة بنجاح');
+            }
+        }
+
+        function printRepairReceipt(id) {
+            const r = db.repairs.find(item => item.id === id);
+            if (!r) return;
+            const area = document.getElementById('printableArea');
+            area.innerHTML = `
+                <div style="font-family: Tajawal, Arial; padding: 20px; max-width: 400px; margin: auto; border: 1px dashed #ccc; direction: rtl;">
+                    <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+                        <h2>${db.settings.shopName}</h2>
+                        <p style="font-size: 11px; font-weight: bold; margin: 2px 0;">مهندس الصيانة: هشام عيد</p>
+                        <p style="font-size: 11px; color: #555;">هاتف: ${db.settings.phone} | ${db.settings.address}</p>
+                        <h3 style="margin-top: 10px;">إيصال استلام صيانة جهاز</h3>
+                    </div>
+                    <div style="font-size: 13px; line-height: 1.8;">
+                        <p><strong>رقم الصيانة:</strong> ${r.repairNo}</p>
+                        <p><strong>التاريخ:</strong> ${r.date}</p>
+                        <p><strong>اسم العميل:</strong> ${r.customerName}</p>
+                        <p><strong>رقم الهاتف:</strong> ${r.phone}</p>
+                        <p><strong>الجهاز:</strong> ${r.deviceType} - ${r.model}</p>
+                        <p><strong>رقم IMEI:</strong> ${r.imei || '-'}</p>
+                        <p><strong>العطل:</strong> ${r.fault}</p>
+                        <hr style="border: 0.5px dashed #ccc; margin: 10px 0;">
+                        <p><strong>التكلفة الإجمالية:</strong> ${r.totalCost} EGP</p>
+                        <p><strong>المبلغ المدفوع:</strong> ${r.paidAmount} EGP</p>
+                        <p><strong>المبلغ المتبقي:</strong> ${r.totalCost - r.paidAmount} EGP</p>
+                    </div>
+                    <div style="text-align: center; margin-top: 20px; font-size: 11px; border-top: 1px solid #eee; padding-top: 10px;">
+                        <p>شكراً لثقتكم بخدمات IRpair - مهندس هشام عيد</p>
+                    </div>
+                </div>
+            `;
+            window.print();
+        }
+
+        // 3. CUSTOMERS LOGIC
+        function renderCustomersTable() {
+            const tbody = document.getElementById('customersTableBody');
+            const search = document.getElementById('customerSearchInput').value.toLowerCase();
+            tbody.innerHTML = '';
+
+            let custMap = {};
+            db.repairs.forEach(r => {
+                if (!custMap[r.phone]) {
+                    custMap[r.phone] = { name: r.customerName, phone: r.phone, address: 'القاهرة، مصر', deals: 0, due: 0 };
+                }
+                custMap[r.phone].deals++;
+                custMap[r.phone].due += (r.totalCost - r.paidAmount);
+            });
+
+            let list = Object.values(custMap).filter(c => c.name.toLowerCase().includes(search) || c.phone.includes(search));
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-textSec">لا يوجد عملاء مسجلون حالياً</td></tr>`;
+                return;
+            }
+
+            list.forEach((c, idx) => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-cardHover/50">
+                        <td class="p-4 font-mono text-accent">CUST-${idx+101}</td>
+                        <td class="p-4 font-semibold text-white">${c.name}</td>
+                        <td class="p-4 font-mono text-textSec">${c.phone}</td>
+                        <td class="p-4 text-textSec">${c.address}</td>
+                        <td class="p-4">${c.deals} جهاز</td>
+                        <td class="p-4 font-bold text-danger">${c.due} EGP</td>
+                        <td class="p-4 text-center">
+                            <button onclick="showToast('عرض ملف العميل: ${c.name}')" class="bg-primary/20 hover:bg-primary/30 text-primary px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fa-solid fa-eye"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        // 4. INVENTORY LOGIC
+        function renderInventoryTable() {
+            const tbody = document.getElementById('inventoryTableBody');
+            const search = document.getElementById('inventorySearchInput').value.toLowerCase();
+            tbody.innerHTML = '';
+
+            let filtered = db.inventory.filter(i => i.sku.toLowerCase().includes(search) || i.name.toLowerCase().includes(search) || i.category.toLowerCase().includes(search));
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-textSec">لا توجد أصناف مسجلة في المخزون</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const lowStock = item.qty <= item.minQty ? 'border-r-4 border-warning' : '';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-cardHover/50 ${lowStock}">
+                        <td class="p-4 font-mono font-bold text-accent">${item.sku}</td>
+                        <td class="p-4 font-semibold text-white">${item.name}</td>
+                        <td class="p-4 text-textSec">${item.category}</td>
+                        <td class="p-4 font-bold ${item.qty <= item.minQty ? 'text-warning' : 'text-success'}">${item.qty} وحدة</td>
+                        <td class="p-4">${item.buyPrice} EGP</td>
+                        <td class="p-4 font-bold text-white">${item.sellPrice} EGP</td>
+                        <td class="p-4 text-center">
+                            <button onclick="deleteInventoryItem('${item.id}')" class="bg-danger/20 hover:bg-danger/30 text-danger px-3 py-1.5 rounded-lg text-xs font-bold"><i class="fa-solid fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openInventoryModal() {
+            const box = document.getElementById('modalContentBox');
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            box.innerHTML = `
+                <div class="flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
+                    <h3 class="font-bold text-base text-white">إضافة صنف جديد للمخزون</h3>
+                    <button onclick="closeModal()" class="text-textSec hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form onsubmit="saveInventoryItem(event)" class="space-y-4 text-xs">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-textSec mb-1">كود الصنف SKU *</label>
+                            <input type="text" id="invSku" value="SKU-${Math.floor(1000+Math.random()*9000)}" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-textSec mb-1">اسم الصنف *</label>
+                            <input type="text" id="invName" placeholder="مثل: شاشة سامسونج A52" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-textSec mb-1">التصنيف</label>
+                            <select id="invCategory" class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                                <option value="شاشات">شاشات</option>
+                                <option value="بطاريات">بطاريات</option>
+                                <option value="إكسسوارات">إكسسوارات</option>
+                                <option value="قطع مايكرو">قطع مايكرو ICs</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-textSec mb-1">الكمية الحالية *</label>
+                            <input type="number" id="invQty" value="5" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-textSec mb-1">حد التنبيه الأدنى</label>
+                            <input type="number" id="invMinQty" value="2" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-textSec mb-1">سعر الشراء (EGP)</label>
+                            <input type="number" id="invBuyPrice" value="0" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                        </div>
+                        <div>
+                            <label class="block text-textSec mb-1">سعر البيع (EGP)</label>
+                            <input type="number" id="invSellPrice" value="0" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-3 border-t border-gray-800">
+                        <button type="button" onclick="closeModal()" class="bg-cardHover px-4 py-2 rounded-xl text-textSec hover:text-white">إلغاء</button>
+                        <button type="submit" class="bg-primary hover:bg-primaryHover text-white px-5 py-2 rounded-xl font-bold shadow-lg shadow-primary/30">حفظ الصنف</button>
+                    </div>
+                </form>
+            `;
+        }
+
+        function saveInventoryItem(e) {
+            e.preventDefault();
+            const newItem = {
+                id: 'INV_' + Date.now(),
+                sku: document.getElementById('invSku').value,
+                name: document.getElementById('invName').value,
+                category: document.getElementById('invCategory').value,
+                qty: parseInt(document.getElementById('invQty').value) || 0,
+                minQty: parseInt(document.getElementById('invMinQty').value) || 2,
+                buyPrice: parseFloat(document.getElementById('invBuyPrice').value) || 0,
+                sellPrice: parseFloat(document.getElementById('invSellPrice').value) || 0
+            };
+
+            db.inventory.push(newItem);
+            saveToLocalStorage();
+            closeModal();
+            renderInventoryTable();
+            showToast('تم إضافة الصنف بنجاح للمخزون');
+        }
+
+        function deleteInventoryItem(id) {
+            db.inventory = db.inventory.filter(i => i.id !== id);
+            saveToLocalStorage();
+            renderInventoryTable();
+            showToast('تم حذف الصنف بنجاح');
+        }
+
+        // 5. SALES (POS) LOGIC
+        function initPosView() {
+            renderPosCatalog();
+            renderPosCustomersSelect();
+            renderPosCart();
+        }
+
+        function renderPosCatalog() {
+            const grid = document.getElementById('posCatalogGrid');
+            const search = document.getElementById('posSearchInput') ? document.getElementById('posSearchInput').value.toLowerCase() : '';
+            grid.innerHTML = '';
+
+            let filtered = db.inventory.filter(i => i.name.toLowerCase().includes(search) || i.sku.toLowerCase().includes(search));
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-3 text-center text-textSec py-10">لا توجد منتجات متاحة للبيع في المخزون</div>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                grid.innerHTML += `
+                    <div onclick="addToPosCart('${item.id}')" class="bg-darkBg hover:bg-cardHover border border-gray-800 hover:border-primary/50 p-3 rounded-xl cursor-pointer transition-all flex flex-col justify-between">
+                        <div>
+                            <span class="text-[10px] text-accent font-mono">${item.sku}</span>
+                            <h4 class="font-bold text-xs text-white mt-1">${item.name}</h4>
+                        </div>
+                        <div class="mt-3 flex items-center justify-between">
+                            <span class="text-xs font-black text-success">${item.sellPrice} EGP</span>
+                            <span class="text-[10px] text-textSec">متاح: ${item.qty}</span>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderPosCustomersSelect() {
+            const select = document.getElementById('posCustomerSelect');
+            select.innerHTML = `<option value="عميل نقدي">عميل نقدي افتراضي</option>`;
+            db.repairs.forEach(r => {
+                if (!select.querySelector(`option[value="${r.phone}"]`)) {
+                    select.innerHTML += `<option value="${r.phone}">${r.customerName} (${r.phone})</option>`;
+                }
+            });
+        }
+
+        function addToPosCart(itemId) {
+            const item = db.inventory.find(i => i.id === itemId);
+            if (!item || item.qty <= 0) {
+                showToast('الصنف غير متوفر بالمخزون حالياً', 'error');
+                return;
+            }
+
+            const existing = posCart.find(c => c.id === itemId);
+            if (existing) {
+                if (existing.qty < item.qty) {
+                    existing.qty++;
+                } else {
+                    showToast('الكمية المطلوبة تتجاوز المتاح في المخزون', 'warning');
+                    return;
+                }
+            } else {
+                posCart.push({ id: item.id, sku: item.sku, name: item.name, price: item.sellPrice, buyPrice: item.buyPrice, qty: 1 });
+            }
+            renderPosCart();
+        }
+
+        function renderPosCart() {
+            const list = document.getElementById('posCartItemsList');
+            list.innerHTML = '';
+
+            if (posCart.length === 0) {
+                list.innerHTML = `<p class="text-xs text-textSec text-center py-6">السلة فارغة</p>`;
+                calculatePosTotals();
+                return;
+            }
+
+            posCart.forEach((item, idx) => {
+                list.innerHTML += `
+                    <div class="bg-darkBg border border-gray-800 p-2.5 rounded-xl flex items-center justify-between text-xs">
+                        <div>
+                            <span class="font-bold text-white">${item.name}</span>
+                            <div class="text-[10px] text-textSec">${item.price} EGP × ${item.qty}</div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="changePosQty(${idx}, 1)" class="w-6 h-6 bg-cardHover rounded flex items-center justify-center text-white">+</button>
+                            <span class="font-bold">${item.qty}</span>
+                            <button onclick="changePosQty(${idx}, -1)" class="w-6 h-6 bg-cardHover rounded flex items-center justify-center text-white">-</button>
+                        </div>
+                    </div>
+                `;
+            });
+            calculatePosTotals();
+        }
+
+        function changePosQty(idx, delta) {
+            posCart[idx].qty += delta;
+            if (posCart[idx].qty <= 0) {
+                posCart.splice(idx, 1);
+            }
+            renderPosCart();
+        }
+
+        function clearPosCart() {
+            posCart = [];
+            renderPosCart();
+        }
+
+        function calculatePosTotals() {
+            let sub = posCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            let discount = parseFloat(document.getElementById('posDiscountInput').value) || 0;
+            let grand = Math.max(0, sub - discount);
+
+            document.getElementById('posSubtotal').innerText = sub.toFixed(2) + ' EGP';
+            document.getElementById('posGrandTotal').innerText = grand.toFixed(2) + ' EGP';
+            document.getElementById('posPaidInput').value = grand.toFixed(2);
+        }
+
+        function checkoutPos() {
+            if (posCart.length === 0) {
+                showToast('السلة فارغة، يجب إضافة منتجات لإتمام البيع', 'error');
+                return;
+            }
+
+            let sub = posCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+            let discount = parseFloat(document.getElementById('posDiscountInput').value) || 0;
+            let grand = Math.max(0, sub - discount);
+            let paid = parseFloat(document.getElementById('posPaidInput').value) || grand;
+            let method = document.getElementById('posPaymentMethod').value;
+            let custName = document.getElementById('posCustomerSelect').value;
+
+            const invoiceNo = 'INV-' + Math.floor(100000 + Math.random() * 900000);
+            const dateStr = new Date().toISOString().replace('T', ' ').substring(0, 16);
+
+            posCart.forEach(cartItem => {
+                const invItem = db.inventory.find(i => i.id === cartItem.id);
+                if (invItem) {
+                    invItem.qty -= cartItem.qty;
+                    db.inventoryMovements.push({
+                        id: 'IM_' + Date.now(),
+                        sku: invItem.sku,
+                        type: 'sale',
+                        qty: cartItem.qty,
+                        date: dateStr,
+                        ref: invoiceNo
+                    });
+                }
+            });
+
+            const newSale = {
+                id: 'S_' + Date.now(),
+                invoiceNo,
+                customer: custName,
+                items: [...posCart],
+                subtotal: sub,
+                discount,
+                grandTotal: grand,
+                paid,
+                remaining: grand - paid,
+                method,
+                date: dateStr
+            };
+
+            db.sales.unshift(newSale);
+
+            if (paid > 0) {
+                db.cashTransactions.push({
+                    id: 'CT_' + Date.now(),
+                    type: 'in',
+                    amount: paid,
+                    description: `مبيعات فاتورة رقم ${invoiceNo}`,
+                    date: dateStr,
+                    method
+                });
+            }
+
+            saveToLocalStorage();
+            posCart = [];
+            renderPosCart();
+            renderPosCatalog();
+            showToast('تم إتمام عملية البيع بنجاح برقم: ' + invoiceNo);
+        }
+
+        // 6. PURCHASES LOGIC
+        function renderPurchasesTable() {
+            const tbody = document.getElementById('purchasesTableBody');
+            tbody.innerHTML = '';
+            if (db.purchases.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-textSec">لا توجد فواتير مشتريات مسجلة</td></tr>`;
+                return;
+            }
+            db.purchases.forEach(p => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-cardHover/50">
+                        <td class="p-4 font-mono font-bold text-accent">${p.invoiceNo}</td>
+                        <td class="p-4 font-semibold text-white">${p.supplier}</td>
+                        <td class="p-4">${p.total} EGP</td>
+                        <td class="p-4 text-success">${p.paid} EGP</td>
+                        <td class="p-4 text-danger">${p.total - p.paid} EGP</td>
+                        <td class="p-4 text-textSec">${p.date}</td>
+                        <td class="p-4 text-center"><button class="bg-primary/20 text-primary px-3 py-1.5 rounded-lg text-xs"><i class="fa-solid fa-eye"></i></button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openPurchaseModal() {
+            showToast('إضافة فاتورة شراء جديدة');
+        }
+
+        // 7. SUPPLIERS LOGIC
+        function renderSuppliersTable() {
+            const tbody = document.getElementById('suppliersTableBody');
+            tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-textSec">لا توجد موارد مسجلة حالياً</td></tr>`;
+        }
+        function openSupplierModal() { showToast('إضافة مورد جديد'); }
+
+        // 8. EXPENSES LOGIC
+        function renderExpensesTable() {
+            const tbody = document.getElementById('expensesTableBody');
+            tbody.innerHTML = '';
+            if (db.expenses.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-textSec">لا توجد مصروفات مسجلة</td></tr>`;
+                return;
+            }
+            db.expenses.forEach(e => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-cardHover/50">
+                        <td class="p-4 font-mono text-accent">${e.refNo}</td>
+                        <td class="p-4 font-semibold text-white">${e.category}</td>
+                        <td class="p-4 text-textSec">${e.description}</td>
+                        <td class="p-4 font-bold text-danger">${e.amount} EGP</td>
+                        <td class="p-4">${e.method}</td>
+                        <td class="p-4 text-textSec">${e.date}</td>
+                        <td class="p-4 text-center"><button onclick="deleteExpense('${e.id}')" class="bg-danger/20 text-danger px-3 py-1.5 rounded-lg text-xs"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openExpenseModal() {
+            const box = document.getElementById('modalContentBox');
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            box.innerHTML = `
+                <div class="flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
+                    <h3 class="font-bold text-base text-white">تسجيل مصروف تشغيلي جديد</h3>
+                    <button onclick="closeModal()" class="text-textSec hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form onsubmit="saveExpense(event)" class="space-y-4 text-xs">
+                    <div>
+                        <label class="block text-textSec mb-1">تصنيف المصروف</label>
+                        <select id="expCategory" class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                            <option value="إيجار">إيجار المحل</option>
+                            <option value="كهرباء">فاتورة كهرباء</option>
+                            <option value="إنترنت">إنترنت</option>
+                            <option value="أجور">أجور ومرتبات الفنيين</option>
+                            <option value="أخرى">أخرى ونثرية</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-textSec mb-1">الوصف / البيان</label>
+                        <input type="text" id="expDesc" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block text-textSec mb-1">المبلغ (EGP)</label>
+                        <input type="number" id="expAmount" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                    </div>
+                    <div class="flex justify-end gap-3 pt-3 border-t border-gray-800">
+                        <button type="button" onclick="closeModal()" class="bg-cardHover px-4 py-2 rounded-xl text-textSec hover:text-white">إلغاء</button>
+                        <button type="submit" class="bg-primary hover:bg-primaryHover text-white px-5 py-2 rounded-xl font-bold shadow-lg shadow-primary/30">حفظ المصروف</button>
+                    </div>
+                </form>
+            `;
+        }
+
+        function saveExpense(e) {
+            e.preventDefault();
+            const category = document.getElementById('expCategory').value;
+            const description = document.getElementById('expDesc').value;
+            const amount = parseFloat(document.getElementById('expAmount').value) || 0;
+            const dateStr = new Date().toISOString().replace('T', ' ').substring(0, 16);
+            const refNo = 'EXP-' + Math.floor(1000 + Math.random() * 9000);
+
+            const newExp = {
+                id: 'E_' + Date.now(),
+                refNo,
+                category,
+                description,
+                amount,
+                method: 'cash',
+                date: dateStr
+            };
+
+            db.expenses.unshift(newExp);
+            db.cashTransactions.push({
+                id: 'CT_' + Date.now(),
+                type: 'out',
+                amount,
+                description: `مصروف: ${category} - ${description}`,
+                date: dateStr,
+                method: 'cash'
+            });
+
+            saveToLocalStorage();
+            closeModal();
+            renderExpensesTable();
+            showToast('تم تسجيل المصروف بنجاح');
+        }
+
+        function deleteExpense(id) {
+            db.expenses = db.expenses.filter(e => e.id !== id);
+            saveToLocalStorage();
+            renderExpensesTable();
+            showToast('تم حذف المصروف بنجاح');
+        }
+
+        // 9. CASHBOX LOGIC
+        function renderCashboxView() {
+            let totalIn = db.cashboxOpening + db.cashTransactions.filter(t => t.type === 'in').reduce((sum, t) => sum + t.amount, 0);
+            let totalOut = db.cashTransactions.filter(t => t.type === 'out').reduce((sum, t) => sum + t.amount, 0);
+
+            document.getElementById('cashboxOpeningVal').innerText = db.cashboxOpening.toFixed(2) + ' EGP';
+            document.getElementById('cashboxTotalInVal').innerText = totalIn.toFixed(2) + ' EGP';
+            document.getElementById('cashboxTotalOutVal').innerText = totalOut.toFixed(2) + ' EGP';
+
+            const tbody = document.getElementById('cashboxTableBody');
+            tbody.innerHTML = '';
+            if (db.cashTransactions.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-textSec">لا توجد حركات نقدية مسجلة</td></tr>`;
+                return;
+            }
+            db.cashTransactions.forEach(t => {
+                const badge = t.type === 'in' ? '<span class="text-success font-bold"><i class="fa-solid fa-arrow-down"></i> وارد</span>' : '<span class="text-danger font-bold"><i class="fa-solid fa-arrow-up"></i> منصرف</span>';
+                tbody.innerHTML += `
+                    <tr class="hover:bg-cardHover/50">
+                        <td class="p-4 text-textSec">${t.date}</td>
+                        <td class="p-4">${badge}</td>
+                        <td class="p-4 text-white font-semibold">${t.description}</td>
+                        <td class="p-4 font-bold ${t.type === 'in' ? 'text-success' : 'text-danger'}">${t.amount} EGP</td>
+                        <td class="p-4">${t.method}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openCashModal() {
+            const box = document.getElementById('modalContentBox');
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            box.innerHTML = `
+                <div class="flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
+                    <h3 class="font-bold text-base text-white">إيداع أو سحب نقدي للخزينة</h3>
+                    <button onclick="closeModal()" class="text-textSec hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form onsubmit="saveCashTx(event)" class="space-y-4 text-xs">
+                    <div>
+                        <label class="block text-textSec mb-1">نوع الحركة</label>
+                        <select id="cashType" class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                            <option value="in">إيداع نقدي (وارد)</option>
+                            <option value="out">سحب نقدي (منصرف)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-textSec mb-1">البيان / السبب *</label>
+                        <input type="text" id="cashDesc" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block text-textSec mb-1">المبلغ (EGP) *</label>
+                        <input type="number" id="cashAmount" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                    </div>
+                    <div class="flex justify-end gap-3 pt-3 border-t border-gray-800">
+                        <button type="button" onclick="closeModal()" class="bg-cardHover px-4 py-2 rounded-xl text-textSec hover:text-white">إلغاء</button>
+                        <button type="submit" class="bg-primary hover:bg-primaryHover text-white px-5 py-2 rounded-xl font-bold shadow-lg shadow-primary/30">حفظ الحركة</button>
+                    </div>
+                </form>
+            `;
+        }
+
+        function saveCashTx(e) {
+            e.preventDefault();
+            const type = document.getElementById('cashType').value;
+            const description = document.getElementById('cashDesc').value;
+            const amount = parseFloat(document.getElementById('cashAmount').value) || 0;
+            const dateStr = new Date().toISOString().replace('T', ' ').substring(0, 16);
+
+            db.cashTransactions.unshift({
+                id: 'CT_' + Date.now(),
+                type,
+                amount,
+                description,
+                date: dateStr,
+                method: 'cash'
+            });
+
+            saveToLocalStorage();
+            closeModal();
+            renderCashboxView();
+            showToast('تم تسجيل حركة الخزينة بنجاح');
+        }
+
+        // 10. REPORTS LOGIC
+        function generateReports() {
+            let totalSales = db.sales.reduce((sum, s) => sum + s.grandTotal, 0) + db.repairPayments.reduce((sum, p) => sum + p.amount, 0);
+            let totalCogs = 0;
+            db.sales.forEach(s => {
+                if (s.items) {
+                    s.items.forEach(item => {
+                        let inv = db.inventory.find(i => i.id === item.id);
+                        totalCogs += (inv ? inv.buyPrice : 0) * item.qty;
+                    });
+                }
+            });
+
+            let grossProfit = totalSales - totalCogs;
+            let totalExpenses = db.expenses.reduce((sum, e) => sum + e.amount, 0);
+            let netProfit = grossProfit - totalExpenses;
+
+            document.getElementById('repTotalSalesVal').innerText = totalSales.toFixed(2) + ' EGP';
+            document.getElementById('repCogsVal').innerText = totalCogs.toFixed(2) + ' EGP';
+            document.getElementById('repGrossProfitVal').innerText = grossProfit.toFixed(2) + ' EGP';
+            document.getElementById('repNetProfitVal').innerText = netProfit.toFixed(2) + ' EGP';
+        }
+
+        // 11. TECHNICAL RECORDS LOGIC
+        function renderTechnicalTable() {
+            const tbody = document.getElementById('technicalTableBody');
+            tbody.innerHTML = '';
+            if (db.technicalRecords.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-textSec">لا توجد سجلات فنية مسجلة</td></tr>`;
+                return;
+            }
+            db.technicalRecords.forEach(t => {
+                tbody.innerHTML += `
+                    <tr class="hover:bg-cardHover/50">
+                        <td class="p-4 font-mono font-bold text-accent">${t.repairNo}</td>
+                        <td class="p-4 text-white">${t.device}</td>
+                        <td class="p-4">${t.fault}</td>
+                        <td class="p-4 text-textSec font-mono">${t.measurements}</td>
+                        <td class="p-4 text-textSec">${t.notes}</td>
+                        <td class="p-4 text-center"><button class="bg-primary/20 text-primary px-3 py-1.5 rounded-lg text-xs"><i class="fa-solid fa-eye"></i></button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        function openTechnicalModal() {
+            const box = document.getElementById('modalContentBox');
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            box.innerHTML = `
+                <div class="flex items-center justify-between mb-4 border-b border-gray-800 pb-3">
+                    <h3 class="font-bold text-base text-white">تسجيل قياسات المايكرو ومسارات البوردة</h3>
+                    <button onclick="closeModal()" class="text-textSec hover:text-white"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <form onsubmit="saveTechnicalRecord(event)" class="space-y-4 text-xs">
+                    <div>
+                        <label class="block text-textSec mb-1">رقم الصيانة والمرجع *</label>
+                        <input type="text" id="techRepairNo" placeholder="مثل: REP-123456" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block text-textSec mb-1">الجهاز والموديل *</label>
+                        <input type="text" id="techDevice" placeholder="مثل: iPhone 13 Pro Max" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block text-textSec mb-1">العطل الفني *</label>
+                        <input type="text" id="techFault" placeholder="مثل: Short on PP_VCC_MAIN" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block text-textSec mb-1">القياسات وخطوط البوردة (دايود مود / فولت)</label>
+                        <input type="text" id="techMeasurements" placeholder="مثل: VBUS 5V OK, Diode V_SYS 0.120" required class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="block text-textSec mb-1">ملاحظات الفني (BGA Reballing / ايسيهات)</label>
+                        <textarea id="techNotes" rows="2" class="w-full bg-darkBg border border-gray-800 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-primary"></textarea>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-3 border-t border-gray-800">
+                        <button type="button" onclick="closeModal()" class="bg-cardHover px-4 py-2 rounded-xl text-textSec hover:text-white">إلغاء</button>
+                        <button type="submit" class="bg-primary hover:bg-primaryHover text-white px-5 py-2 rounded-xl font-bold shadow-lg shadow-primary/30">حفظ السجل الفني</button>
+                    </div>
+                </form>
+            `;
+        }
+
+        function saveTechnicalRecord(e) {
+            e.preventDefault();
+            const newRec = {
+                id: 'TR_' + Date.now(),
+                repairNo: document.getElementById('techRepairNo').value,
+                device: document.getElementById('techDevice').value,
+                fault: document.getElementById('techFault').value,
+                measurements: document.getElementById('techMeasurements').value,
+                notes: document.getElementById('techNotes').value,
+                date: new Date().toISOString().replace('T', ' ').substring(0, 16)
+            };
+            db.technicalRecords.unshift(newRec);
+            saveToLocalStorage();
+            closeModal();
+            renderTechnicalTable();
+            showToast('تم حفظ السجل الفني بنجاح');
+        }
+
+        // 12. SETTINGS & BACKUP LOGIC
+        function saveSettings() {
+            db.settings.shopName = document.getElementById('settingShopName').value;
+            db.settings.phone = document.getElementById('settingPhone').value;
+            db.settings.address = document.getElementById('settingAddress').value;
+            saveToLocalStorage();
+            showToast('تم حفظ الإعدادات بنجاح');
+        }
+
+        function exportBackupJson() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+            const downloadAnchor = document.createElement('a');
+            downloadAnchor.setAttribute("href", dataStr);
+            downloadAnchor.setAttribute("download", `irpair_pro_backup_${new Date().toISOString().split('T')[0]}.json`);
+            document.body.appendChild(downloadAnchor);
+            downloadAnchor.click();
+            downloadAnchor.remove();
+            showToast('تم تصدير النسخة الاحتياطية بنجاح');
+        }
+
+        function importBackupJson(event) {
+            const fileReader = new FileReader();
+            if (event.target.files[0]) {
+                fileReader.readAsText(event.target.files[0], "UTF-8");
+                fileReader.onload = function(e) {
+                    try {
+                        db = JSON.parse(e.target.result);
+                        saveToLocalStorage();
+                        switchTab('dashboard');
+                        showToast('تم استعادة النسخة الاحتياطية بنجاح');
+                    } catch (err) {
+                        showToast('ملف النسخة الاحتياطية غير صالح', 'error');
+                    }
+                };
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.add('hidden');
+        }
+    </script>
+</body>
+</html>
